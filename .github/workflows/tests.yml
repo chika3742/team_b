@@ -43,6 +43,11 @@ jobs:
       - name: Copy Environment File
         run: cp .env.example .env
 
+      - name: Configure SQLite Database for Testing
+        run: |
+          echo "DB_CONNECTION=sqlite" >> .env
+          echo "DB_DATABASE=database/database.sqlite" >> .env
+
       - name: Generate Application Key
         run: php artisan key:generate
 
