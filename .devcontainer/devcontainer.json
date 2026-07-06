@@ -1,0 +1,45 @@
+// https://aka.ms/devcontainer.json
+// VS Code: opens directly via the "Dev Containers" extension.
+// IntelliJ IDEA: File > Remote Development > Dev Containers, point at this file
+// (requires the Docker/Gateway plugin; IntelliJ reads the shared fields below
+// and the "customizations.jetbrains" block, and ignores "customizations.vscode").
+{
+	"name": "Existing Docker Compose (Extend)",
+	"dockerComposeFile": [
+		"../compose.yaml"
+	],
+	"service": "laravel.test",
+	"workspaceFolder": "/var/www/html",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"laravel.vscode-laravel",
+				"mikestead.dotenv",
+				"ryannaddy.laravel-artisan",
+				"onecentlin.laravel-blade",
+				"dbaeumer.vscode-eslint",
+				"esbenp.prettier-vscode",
+				"bradlc.vscode-tailwindcss"
+				// "amiralizadeh9480.laravel-extra-intellisense",
+				// "onecentlin.laravel5-snippets"
+			],
+			"settings": {}
+		},
+		"jetbrains": {
+			// "backend" defaults to whichever JetBrains IDE you launch Gateway from
+			// (IntelliJ IDEA Ultimate, PhpStorm, ...); leave unset to let Gateway choose.
+			"plugins": [
+				"com.jetbrains.php"
+				// Add the Laravel plugin's marketplace ID here if you use IntelliJ IDEA
+				// Ultimate + the PHP plugin and want Laravel-specific inspections/navigation.
+			],
+			"settings": {}
+		}
+	},
+	"remoteUser": "sail",
+	"postCreateCommand": "chown -R 1000:1000 /var/www/html 2>/dev/null || true",
+	"forwardPorts": [8000, 5173],
+    overrideCommand: false
+	// "runServices": [],
+	// "shutdownAction": "none",
+}
