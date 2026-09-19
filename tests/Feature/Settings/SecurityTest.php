@@ -3,16 +3,8 @@
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia as Assert;
-use Laravel\Fortify\Features;
 
 test('security page is displayed', function () {
-    $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
-
-    Features::twoFactorAuthentication([
-        'confirm' => true,
-        'confirmPassword' => true,
-    ]);
-
     $user = User::factory()->create();
 
     $this->actingAs($user)
@@ -20,44 +12,17 @@ test('security page is displayed', function () {
         ->get(route('security.edit'))
         ->assertInertia(fn (Assert $page) => $page
             ->component('settings/security')
-            ->where('canManageTwoFactor', true)
-            ->where('twoFactorEnabled', false),
+            ->has('passwordRules'),
         );
 });
 
-test('security page requires password confirmation when enabled', function () {
-    $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
-
+test('security page requires password confirmation', function () {
     $user = User::factory()->create();
-
-    Features::twoFactorAuthentication([
-        'confirm' => true,
-        'confirmPassword' => true,
-    ]);
 
     $response = $this->actingAs($user)
         ->get(route('security.edit'));
 
     $response->assertRedirect(route('password.confirm'));
-});
-
-test('security page renders without two factor when feature is disabled', function () {
-    $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
-
-    config(['fortify.features' => []]);
-
-    $user = User::factory()->create();
-
-    $this->actingAs($user)
-        ->withSession(['auth.password_confirmed_at' => time()])
-        ->get(route('security.edit'))
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('settings/security')
-            ->where('canManageTwoFactor', false)
-            ->missing('twoFactorEnabled')
-            ->missing('requiresConfirmation'),
-        );
 });
 
 test('password can be updated', function () {
