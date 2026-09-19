@@ -1,0 +1,6 @@
+{
+    "id": "claude-config",
+    "version": "1.0.0",
+    "name": "Claude Code config directory",
+    "description": "Creates ~/.claude owned by the remote user so that a named volume mounted there inherits that ownership instead of being created as root."
+}

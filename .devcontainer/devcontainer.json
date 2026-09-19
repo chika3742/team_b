@@ -4,6 +4,14 @@
     "dockerComposeFile": ["../compose.yaml"],
     "service": "laravel.test",
     "workspaceFolder": "/var/www/html",
+    // Without this the tool replaces the entrypoint with a sleep loop, so Sail's
+    // start-container never runs and supervisord never starts artisan serve.
+    "overrideCommand": false,
+    // Creates /home/sail/.claude in the image so the volume below inherits sail
+    // ownership rather than being created as root.
+    "features": {
+        "./claude-config": {}
+    },
     // Keep Claude Code's sessions and login across rebuilds. CLAUDE_CONFIG_DIR is
     // required as well, so that .claude.json lands inside the volume, not beside it.
     "mounts": [
