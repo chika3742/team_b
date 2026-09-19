@@ -110,7 +110,6 @@ DevContainerを起動するとPHPバックエンドは自動的に起動しま�
 > **`npm install` をmacOS側で実行しないように注意してください**。コンテナはLinuxで動いていますので、間違ったプログラムがインストールされ、開発サーバーが起動しなくなります。
 > その場合、コンテナ内で `npm install` を実行し直してください。
 
-
 > [!TIP]
 > **自分が今ホストOSにいるか、コンテナにいるかの見分け方**
 >
@@ -159,7 +158,7 @@ curl -fsSL https://claude.ai/install.sh | bash
 > [!WARNING]
 >
 > **コンテナを作り直すと消えます**。
->`sail stop` → `sail up -d` や「Reopen in Container」では残りますが、`sail down` や「Rebuild Container」の後は入れ直してください。
+> `sail stop` → `sail up -d` や「Reopen in Container」では残りますが、`sail down` や「Rebuild Container」の後は入れ直してください。
 
 ## 何がどこで動くか
 
