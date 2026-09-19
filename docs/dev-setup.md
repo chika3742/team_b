@@ -7,11 +7,11 @@
 
 - [必要なもの](#必要なもの)
 - [セットアップ](#セットアップ)
-  - [1. clone して .env を作る](#1-clone-して-env-を作る)
-  - [2. vendor を用意する](#2-vendor-を用意する)
-  - [3. コンテナを起動する](#3-コンテナを起動する)
-  - [4. セットアップを仕上げる](#4-セットアップを仕上げる)
-  - [5. フロントエンドを起動する](#5-フロントエンドを起動する)
+    - [1. clone して .env を作る](#1-clone-して-env-を作る)
+    - [2. vendor を用意する](#2-vendor-を用意する)
+    - [3. コンテナを起動する](#3-コンテナを起動する)
+    - [4. セットアップを仕上げる](#4-セットアップを仕上げる)
+    - [5. フロントエンドを起動する](#5-フロントエンドを起動する)
 - [DevContainer を使う場合](#devcontainer-を使う場合)
 - [AI エージェントを使用する場合](#ai-エージェントを使用する場合)
 - [何がどこで動くか](#何がどこで動くか)
@@ -111,7 +111,7 @@ MySQL の初期化が終わる前に実行すると、マイグレーション�
 
 その後、コンテナ内でプロジェクトを開きます。
 
-- **VS Code** — *Dev Containers: Reopen in Container*
+- **VS Code** — _Dev Containers: Reopen in Container_
 - **JetBrains** — `.devcontainer/devcontainer.json` を開いてガター（行番号の横）のアクション（Create Dev Container and Mount Sources...）から起動。
 
 コンテナ内では `./vendor/bin/sail` を付ける必要はなく、`composer setup` や `npm run dev`、
@@ -159,7 +159,7 @@ curl -fsSL https://claude.ai/install.sh | bash
 `sail up` で起動するコンテナは 2 つです。
 
 | コンテナ       | 中身                                                                                                         |
-|----------------|--------------------------------------------------------------------------------------------------------------|
+| -------------- | ------------------------------------------------------------------------------------------------------------ |
 | `laravel.test` | PHP 8.5 / Node 24 / Composer。起動時に supervisor が `artisan serve --host=0.0.0.0 --port=80` を常駐させます |
 | `mysql`        | MySQL 8.4。初回起動時に `laravel` と `testing` の 2 つの DB を作成します                                     |
 
@@ -170,7 +170,7 @@ curl -fsSL https://claude.ai/install.sh | bash
 **ポート**
 
 | ホスト側 | 用途             | 変更する変数      |
-|----------|------------------|-------------------|
+| -------- | ---------------- | ----------------- |
 | 8000     | アプリケーション | `APP_PORT`        |
 | 5173     | Vite dev server  | `VITE_PORT`       |
 | 3306     | MySQL            | `FORWARD_DB_PORT` |
@@ -196,7 +196,7 @@ alias sail='[ -f sail ] && sh sail || sh vendor/bin/sail'
 これらはホスト側でしか実行できません。
 
 | コマンド                   | 内容                                              |
-|----------------------------|---------------------------------------------------|
+| -------------------------- | ------------------------------------------------- |
 | `sail up -d` / `sail stop` | コンテナの起動 / 停止                             |
 | `sail ps`                  | コンテナの状態を表示                              |
 | `sail shell`               | アプリコンテナ内の bash に入る                    |
@@ -207,7 +207,7 @@ alias sail='[ -f sail ] && sh sail || sh vendor/bin/sail'
 同じ処理を、ホストからは `sail` 経由で、コンテナ内では直接実行します。
 
 | 内容                                                | ホストから                          | コンテナ内                         |
-|-----------------------------------------------------|-------------------------------------|------------------------------------|
+| --------------------------------------------------- | ----------------------------------- | ---------------------------------- |
 | Vite dev server（ホットリロード）                   | `sail npm run dev`                  | `npm run dev`                      |
 | 本番用アセットビルド                                | `sail npm run build`                | `npm run build`                    |
 | マイグレーション実行                                | `sail artisan migrate`              | `php artisan migrate`              |
@@ -231,7 +231,7 @@ sail composer ci:check           # composer ci:check              … CI と同�
 ```
 
 | ツール                                                | 設定ファイル     | ホストから                                      | コンテナ内                            |
-|-------------------------------------------------------|------------------|-------------------------------------------------|---------------------------------------|
+| ----------------------------------------------------- | ---------------- | ----------------------------------------------- | ------------------------------------- |
 | [Pest](https://pestphp.com/)                          | `phpunit.xml`    | `sail test`                                     | `php artisan test`                    |
 | [Pint](https://laravel.com/docs/pint)（フォーマッタ） | `pint.json`      | `sail composer lint`                            | `composer lint`                       |
 | [PHPStan](https://phpstan.org/) / Larastan level 7    | `phpstan.neon`   | `sail composer types:check`                     | `composer types:check`                |
@@ -251,15 +251,18 @@ sail composer ci:check           # composer ci:check              … CI と同�
 ## トラブルシューティング
 
 ### `sail up` のビルド中に `groupadd` のエラーで落ちる
+
 `.env` に `WWWGROUP` / `WWWUSER` がありません。Compose が空文字を渡してビルドが失敗します。
 `.env.example` をコピーし直してください。
 
 ### `sail up` 直後に `SQLSTATE[HY000] [2002] Connection refused`
+
 MySQL がまだデータディレクトリを初期化中です。`compose.yaml` に healthcheck はありますが、
 アプリ側がそれを待つ設定にはなっていないため、起動直後の数十秒は接続に失敗します。
 `sail ps` で状態を確認し、少し待ってから再実行してください。
 
 ### `npm run dev` がネイティブモジュール（`rollup` / `oxide` / `lightningcss` / `vp`）で落ちる
+
 別プラットフォーム向けの `node_modules` が入っています。コンテナを起動する前にホストで
 `npm install` を実行した場合に起きます。`node_modules` は bind mount されているので、
 コンテナからもホスト側のバイナリが見えてしまいます。コンテナ内で入れ直してください。
@@ -270,13 +273,16 @@ rm -rf node_modules && npm install
 ```
 
 ### `Unable to locate file in Vite manifest`
+
 ビルド済みアセットがありません。`sail npm run dev` か `sail npm run build`
 （コンテナ内からは `npm run dev` / `npm run build`）を実行してください。
 
 ### 8000 / 5173 / 3306 番ポートが既に使われている
+
 `.env` の `APP_PORT` / `VITE_PORT` / `FORWARD_DB_PORT` を変更して `sail up -d` し直してください。
 
 ### `.env` を編集したのに反映されない
+
 Laravel は一度読み込んだ環境変数を上書きしません。同じキーが複数行あると**先に書かれたほうが有効になり**、
 さらに実際の環境変数が `.env` より優先されます。
 行を追記するのではなく既存の行を書き換えて、`sail restart` してください。
