@@ -28,11 +28,6 @@
 
 ## セットアップ
 
-プロジェクトルートで実行します。手順 1〜3 はホスト側でしか実行できません。
-手順 4 以降はコンテナ内の処理で、ホストからは `./vendor/bin/sail` 経由で呼び出します。
-DevContainer のターミナルなど、すでにコンテナ内にいる場合は `sail` を付けない形で実行してください
-（対応は[アプリを操作する](#アプリを操作する)を参照）。
-
 ### 1. clone して .env を作る
 
 ```bash
@@ -41,17 +36,15 @@ cd team_b
 cp .env.example .env
 ```
 
-`.env` は**この次の手順より前に**存在している必要があります。`compose.yaml` の
-`${WWWGROUP}` `${WWWUSER}` `${APP_PORT}` `${DB_PASSWORD}` を解決するために、
-Docker Compose 自身が `.env` を読むためです。
-
-`.env.example` の初期値は Sail 構成に合わせてあるので、編集は不要です。
-`APP_KEY` は空のままにしてください（手順 4 で生成されます）。
+> [!NOTE]
+>
+> `.env` はこの段階で `.env.example` からコピーします。`compose.yaml` の
+> `${WWWGROUP}` `${WWWUSER}` `${APP_PORT}` `${DB_PASSWORD}` を解決するために、Docker Compose 自身が `.env` を読むためです。
 
 ### 2. vendor を用意する
 
-`compose.yaml` はアプリのイメージを `./vendor/laravel/sail/runtimes/8.5` からビルドしますが、
-clone 直後はこのディレクトリが存在しません。使い捨てのコンテナで Composer の依存パッケージを一度だけインストールします。
+Laravel Sail は、dockerコマンドの代わりに使用できるラッパーです。これを実行するには Composer からインストールする必要がありますが、clone 直後はインストールされていません。
+使い捨てのコンテナで Composer の依存パッケージを一度だけインストールします。
 
 ```bash
 docker run --rm \
@@ -65,18 +58,14 @@ docker run --rm \
 docker rmi composer:2
 ```
 
-Sail 以外のコンテナを使うのはこの手順だけで、実行するのも最初の一度きりです。
-
 ### 3. コンテナを起動する
 
 ```bash
-./vendor/bin/sail up -d
+./vendor/bin/sail up
 ```
 
 初回は PHP イメージのビルドで数分かかります。その後 MySQL がデータディレクトリを初期化するのに
-さらに 15〜30 秒ほどかかります。`./vendor/bin/sail ps` で状態を確認できますが、
-初期化中の MySQL は `starting` ではなく `unhealthy` と表示されることがあります
-（healthcheck に `start_period` が設定されていないため）。異常ではないので、そのまま次に進んでください。
+さらに 15〜30 秒ほどかかります。
 
 なおこの時点ではまだアプリは動きません。`APP_KEY` の生成もマイグレーションも次の手順なので、
 コンテナのログには起動エラーが出ます。手順 4 が終われば解消します。
@@ -103,19 +92,21 @@ MySQL の初期化が終わる前に実行すると、マイグレーション�
 
 ## DevContainer を使う場合
 
-`.devcontainer/devcontainer.json` は `compose.yaml` の `laravel.test` サービスにアタッチする設定です。
-エディタがアプリと同じコンテナの中で動きます。
-
-**上の手順 1〜3 はホスト側で先に実行する必要があります。**
-`vendor/laravel/sail/runtimes/8.5/Dockerfile` が無いと DevContainer 自体がビルドできないためです。
-
-その後、コンテナ内でプロジェクトを開きます。
+上の手順 1〜4 を行ったあと、コンテナ内でプロジェクトを開きます。
 
 - **VS Code** — _Dev Containers: Reopen in Container_
 - **JetBrains** — `.devcontainer/devcontainer.json` を開いてガター（行番号の横）のアクション（Create Dev Container and Mount Sources...）から起動。
 
 コンテナ内では `./vendor/bin/sail` を付ける必要はなく、`composer setup` や `npm run dev`、
-`php artisan ...` をそのまま実行できます。
+`php artisan ...` をそのまま実行できます。（[§アプリを操作する](#アプリを操作する) 参照）
+
+DevContainerを起動するとPHPバックエンドは自動的に起動しますが、**React（フロント）の開発サーバーは自動起動しません**。
+これを起動させないとホットリロード（コードを書き換えたときに即座に反映させる機能）が使えませんので、使いたいときはコンテナ内で `npm run dev` を起動してください。
+
+> [!WARNING]
+>
+> **`npm install` をmacOS側で実行しないように注意してください**。</span>コンテナはLinuxで動いていますので、間違ったプログラムがインストールされ、開発サーバーが起動しなくなります。
+> その場合、コンテナ内で `npm install` を実行し直してください。
 
 ## AI エージェントを使用する場合
 
@@ -132,27 +123,25 @@ php artisan boost:install
 
 対話形式で、使うエージェント・導入する Skill・MCP 設定を選べます。
 
-### MCP サーバーはコンテナ内で動かす必要があります
-
-生成される MCP 設定は `php artisan boost:mcp` を起動します。PHP が必要なので、
-**エージェント自体もコンテナ内で動かしてください**。ホスト側から使うと MCP サーバーが起動できず、
-`database-query` や `search-docs` といった Boost のツールが一切使えません。
+> [!IMPORTANT]
+> MCP サーバーはコンテナ内で動かす必要があります。
+>
+> 生成される MCP 設定は `php artisan boost:mcp` を起動します。PHP が必要なので、**エージェント自体もコンテナ内で動かしてください**。ホスト側から使うと MCP サーバーが起動できず、
+> `database-query` や `search-docs` といった Boost のツールが一切使えません。
 
 ### Claude Code をコンテナに入れる
 
 ネイティブインストーラを使ってください。
 
 ```bash
-# DevContainerを起動した（開いた）状態でホストから
-docker exec -u root "$(docker ps -qf name=laravel.test)" chown -R sail:sail /home/sail/.claude
-
 # コンテナ内で
 curl -fsSL https://claude.ai/install.sh | bash
 ```
 
-インストール先が `~/.local/bin` なので、**コンテナを作り直すと消えます**。
-`sail stop` → `sail up -d` や「Reopen in Container」では残りますが、
-`sail down` や「Rebuild Container」の後は入れ直してください。
+> [!WARNING]
+>
+> **コンテナを作り直すと消えます**。
+>`sail stop` → `sail up -d` や「Reopen in Container」では残りますが、`sail down` や「Rebuild Container」の後は入れ直してください。
 
 ## 何がどこで動くか
 
