@@ -1,30 +1,27 @@
-# 開発環境セットアップ
+---
+title: 開発環境セットアップ
+nav_order: 2
+---
+
+# {{ page.title }}
 
 [Laravel Sail](https://laravel.com/docs/sail) を使って、ローカル開発環境を完全に Docker 内で構築する手順です。
 **用意するのは Docker だけ**で、ホストに PHP・Node・MySQL をインストールする必要はありません。
 
-## 目次
-
-- [必要なもの](#必要なもの)
-- [セットアップ](#セットアップ)
-    - [1. clone して .env を作る](#1-clone-して-env-を作る)
-    - [2. vendor を用意する](#2-vendor-を用意する)
-    - [3. コンテナを起動する](#3-コンテナを起動する)
-    - [4. セットアップを仕上げる](#4-セットアップを仕上げる)
-    - [5. フロントエンドを起動する](#5-フロントエンドを起動する)
-- [DevContainer を使う場合](#devcontainer-を使う場合)
-- [AI エージェントを使用する場合](#ai-エージェントを使用する場合)
-- [何がどこで動くか](#何がどこで動くか)
-- [よく使うコマンド](#よく使うコマンド)
-- [テストとコード品質](#テストとコード品質)
-- [ディレクトリ構成](#ディレクトリ構成)
-- [トラブルシューティング](#トラブルシューティング)
+<details open markdown="block">
+  <summary>
+    目次
+  </summary>
+  {: .text-delta }
+1. TOC
+{:toc}
+</details>
 
 ## 必要なもの
 
 - **Docker** — [OrbStack](https://orbstack.dev/) または Docker Desktop。これ以外はすべてコンテナ内で動きます
 - **Git**
-- **エディタの DevContainer 連携**（任意）— VS Code + Dev Containers 拡張、または JetBrains IDE。[DevContainer を使う場合](#devcontainer-を使う場合)を参照
+- **エディタの DevContainer 連携**（任意）— VS Code + Dev Containers 拡張、または JetBrains IDE。[DevContainer を使う場合](#devcontainer)を参照
 
 ## セットアップ
 
@@ -90,7 +87,7 @@ MySQL の初期化が終わる前に実行すると、マイグレーション�
 
 これで **<http://localhost:8000>** にアクセスできます。
 
-## DevContainer を使う場合
+## DevContainer を使う場合 {#devcontainer}
 
 DevContainerを使うと、煩雑な設定無しでエディターによる自動補完などの入力支援を受けることが出来ます。また、「新しいターミナル」を開いたときにデフォルトでコンテナ内でターミナルが開くようになります。
 
@@ -100,7 +97,7 @@ DevContainerを使うと、煩雑な設定無しでエディターによる自�
 - **JetBrains** — `.devcontainer/devcontainer.json` を開いてガター（行番号の横）のアクション（Create Dev Container and Mount Sources...）から起動。
 
 コンテナ内では `./vendor/bin/sail` を付ける必要はなく、`composer setup` や `npm run dev`、
-`php artisan ...` をそのまま実行できます。（[§アプリを操作する](#アプリを操作する) 参照）
+`php artisan ...` をそのまま実行できます。（[§アプリを操作する](#app-commands) 参照）
 
 DevContainerを起動するとPHPバックエンドは自動的に起動しますが、**React（フロント）の開発サーバーは自動起動しません**。
 これを起動させないとホットリロード（コードを書き換えたときに即座に反映させる機能）が使えませんので、使いたいときはコンテナ内で `npm run dev` を起動してください。
@@ -208,7 +205,7 @@ alias sail='[ -f sail ] && sh sail || sh vendor/bin/sail'
 | `sail shell`               | アプリコンテナ内の bash に入る                    |
 | `sail down`                | コンテナを**削除**（`stop` と違い中身が消えます） |
 
-### アプリを操作する
+### アプリを操作する {#app-commands}
 
 同じ処理を、ホストからは `sail` 経由で、コンテナ内では直接実行します。
 

@@ -1,22 +1,18 @@
-# ディレクトリ構成
+---
+title: ディレクトリ構成
+nav_order: 3
+---
 
-## 目次
+# {{ page.title }}
 
-- [全体像](#全体像)
-- [バックエンド](#バックエンド)
-    - [app/](#app)
-    - [routes/](#routes)
-    - [database/](#database)
-    - [config/](#config)
-    - [bootstrap/](#bootstrap)
-    - [tests/](#tests)
-- [フロントエンド](#フロントエンド)
-    - [resources/js/](#resourcesjs)
-    - [resources/css/](#resourcescss)
-    - [resources/views/](#resourcesviews)
-    - [public/](#public)
-- [ルート直下の設定ファイル](#ルート直下の設定ファイル)
-- [自動生成されるもの](#自動生成されるもの)
+<details open markdown="block">
+  <summary>
+    目次
+  </summary>
+  {: .text-delta }
+1. TOC
+{:toc}
+</details>
 
 ## 全体像
 

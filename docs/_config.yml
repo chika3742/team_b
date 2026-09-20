@@ -1,0 +1,21 @@
+# GitHub Pages（Settings → Pages → Deploy from a branch / main / docs）用の設定。
+# サイドバーは各ページの front matter（title・nav_order）から自動生成されます。
+title: 図書館予約管理システム
+description: Team B 開発ドキュメント
+
+# GitHub Pages のビルドは jekyll-remote-theme に対応しているので、
+# ワークフローを書かずにテーマを読み込めます。壊れないようタグで固定。
+remote_theme: just-the-docs/just-the-docs@v0.12.0
+
+url: https://chika3742.github.io
+baseurl: /team_b
+
+search_enabled: true
+heading_anchors: true
+
+aux_links:
+    GitHub: https://github.com/chika3742/team_b
+
+# 目次（{:toc}）はページタイトルの h1 を含めず、## と ### だけを拾う。
+kramdown:
+    toc_levels: 2..3
