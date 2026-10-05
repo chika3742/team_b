@@ -6,14 +6,12 @@
 
 - [はじめに](#はじめに)
 - [このアプリの仕組み](#このアプリの仕組み)
-- [Laravel 側のコードの読み方](#laravel-側のコードの読み方)
-- [TypeScript 最小入門](#typescript-最小入門)
 - [チュートリアル](#チュートリアル)
     - [ステップ 1 仮ルートを足す](#ステップ-1-仮ルートを足す)
     - [ステップ 2 ページファイルを作る](#ステップ-2-ページファイルを作る)
-    - [ステップ 3 パンくずを付ける](#ステップ-3-パンくずを付ける)
-    - [ステップ 4 サイドバーにリンクを足す](#ステップ-4-サイドバーにリンクを足す)
-    - [ステップ 5 見た目を整える](#ステップ-5-見た目を整える)
+    - [ステップ 3 見た目を整える](#ステップ-3-見た目を整える)
+- [Laravel 側のコードの読み方](#laravel-側のコードの読み方)
+- [TypeScript 最小入門](#typescript-最小入門)
 - [ページ間の移動](#ページ間の移動)
 - [フォーム](#フォーム)
 - [共有データとレイアウト](#共有データとレイアウト)
@@ -27,38 +25,36 @@
 
 このガイドを読み終えると、次のことができるようになります。
 
-- 新しいページを 1 枚作り、サイドバーから開けるようにする
+- 新しいページを 1 枚作る
 - ページ同士をリンクでつなぐ
 - フォームを作り、サーバーから返ってきたエラーを表示する
 - 既存の UI 部品（ボタン・カード・入力欄など）を使って見た目を整える
 
 **前提** — [開発環境セットアップ](dev-setup.md)が終わっていて、`npm run dev` が起動できる状態であること。
 
-**読み方** — まず「[このアプリの仕組み](#このアプリの仕組み)」から「[チュートリアル](#チュートリアル)」までを順番に読んでください。
+**読み方** — まず「[このアプリの仕組み](#このアプリの仕組み)」を読んでから、「[チュートリアル](#チュートリアル)」で実際にページを作ってみてください。
 それ以降の章は、必要になったときに辞書のように引けば十分です。
 
 > [!NOTE]
 >
-> このガイドのコマンドは、すべて**コンテナ内で実行する前提**で書いています。
+> このガイドのコマンドは、すべてコンテナ内で実行する前提で書いています。
 > ホスト（Mac）から実行する場合は、先頭に `sail` を付けてください（例：`npm run dev` → `sail npm run dev`）。
 > 詳しくは dev-setup の[アプリを操作する](dev-setup.md#アプリを操作する)を参照してください。
 
 ## このアプリの仕組み
 
-**この章でわかること** — よくある React アプリとこのプロジェクトの違い。画面が表示されるまでの流れ。
+### 一般的な React アプリとの違い
 
-### よくある React アプリとの違い
-
-このプロジェクトは、**Laravel（PHP のフレームワーク）と React を [Inertia](https://inertiajs.com/) でつないだ構成**です。
+このプロジェクトは、Laravel（PHP のフレームワーク）と React を [Inertia](https://inertiajs.com/) でつないだ構成です。
 見た目は React で作りますが、作り方はよくある「Vite + React で API を叩くアプリ」とかなり違います。
 
-| やりたいこと           | よくある React アプリ                           | このプロジェクト                                      |
-| ---------------------- | ----------------------------------------------- | ----------------------------------------------------- |
-| URL ごとに画面を分ける | React Router（`<Route path="/books">`）         | Laravel の `routes/web.php` に書く                    |
-| データを取ってくる     | `useEffect` の中で `fetch('/api/books')`        | **サーバーが props として渡してくれる**。fetch は不要 |
-| 別の画面へ移動する     | `<a>` や React Router の `<Link>`               | Inertia の `<Link>`                                   |
-| フォームを送信する     | `fetch` で POST して、エラーも自分で `useState` | Inertia の `<Form>`。エラーは自動で `errors` に入る   |
-| API                    | 自分で作る・叩く                                | **作らない・叩かない**                                |
+| やりたいこと           | 一般的な React アプリ                           | このプロジェクト                                    |
+| ---------------------- | ----------------------------------------------- | --------------------------------------------------- |
+| URL ごとに画面を分ける | React Router（`<Route path="/books">`）         | Laravel の `routes/web.php` に書く                  |
+| データを取ってくる     | `useEffect` の中で `fetch('/api/books')`        | **サーバーが props として渡す**。fetch は不要       |
+| 別の画面へ移動する     | `<a>` や React Router の `<Link>`               | Inertia の `<Link>`                                 |
+| フォームを送信する     | `fetch` で POST して、エラーも自分で `useState` | Inertia の `<Form>`。エラーは自動で `errors` に入る |
+| API                    | 自分で作る・叩く                                | **作らない・叩かない**                              |
 
 一番大きな違いは、**「どのページを表示するか」「そのページにどんなデータを渡すか」をサーバー（Laravel）が決める**ことです。
 React 側は、受け取った props を画面に描くことに集中できます。
@@ -69,13 +65,13 @@ React 側は、受け取った props を画面に描くことに集中できま�
 
 ```mermaid
 flowchart LR
-    A["ブラウザ<br>/books を開く"] --> B["routes/web.php<br>URL と担当を対応付け"]
+    A["ブラウザ<br>/books を開く"] --> B["routes/web.php<br>URL とコントローラを対応付け"]
     B --> C["コントローラ<br>DB から本を取ってくる"]
     C -->|"Inertia::render('books/index', props)"| D["pages/books/index.tsx<br>props を受け取って描画"]
 ```
 
-1. **ルート**（URL とそれを処理するプログラムの対応表）が、`/books` の担当を探します
-2. 担当の**コントローラ**（リクエストを処理する PHP のクラス）が、データベースから本の一覧を取ってきます
+1. **ルート**（URL とそれを処理するプログラムの対応表）から、`/books` を処理するコントローラを探します
+2. 見つかった**コントローラ**（リクエストを処理する PHP のクラス）が、データベースから本の一覧を取ってきます
 3. コントローラが `Inertia::render('books/index', [...])` を呼ぶと、`resources/js/pages/books/index.tsx` が表示され、渡したデータが **props** として届きます
 
 最初にサイトを開いたときは HTML がまるごと返ってきますが、その後 `<Link>` でページを移動するときは、Inertia が裏で「次のページ名と props」だけを JSON で受け取って画面を差し替えます。
@@ -90,9 +86,141 @@ flowchart LR
 | 本物のルート・コントローラ・データベース・バリデーション | バックエンド             |
 | ページに渡す props の**名前と形**を決める                | **両方で相談して決める** |
 
-## Laravel 側のコードの読み方
+## チュートリアル
 
-**この章でわかること** — フロントエンド担当が PHP のどこを読めばよいか。バックエンドが未完成でも画面を作り始める方法。
+図書館の「本の一覧」ページを作ります。完成すると、本がカードで並ぶページになります。
+
+始める前に `npm run dev` を起動しておいてください。
+また、ページを見るにはログインが必要です。まだアカウントが無ければ <http://localhost:8000/register> から作ってください。
+
+### ステップ 1 仮ルートを足す
+
+**編集するファイル：** `routes/web.php`
+
+本物のルートはバックエンド担当が作りますが、それを待たずに画面を作れるように、ダミーデータを渡す**仮ルート**を足します。
+ログインした人だけが見られるページにするため、`Route::middleware(['auth', 'verified'])->group(...)` の中に書きます。
+
+```php
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::inertia('dashboard', 'dashboard')->name('dashboard');
+
+    Route::inertia('books', 'books/index', [
+        'books' => [
+            ['id' => 1, 'title' => '吾輩は猫である', 'author' => '夏目漱石', 'category' => ['id' => 1, 'category_name' => '小説']],
+            ['id' => 2, 'title' => '羅生門', 'author' => '芥川龍之介', 'category' => ['id' => 1, 'category_name' => '小説']],
+            ['id' => 3, 'title' => '銀河鉄道の夜', 'author' => '宮沢賢治', 'category' => ['id' => 2, 'category_name' => '童話']],
+        ],
+    ])->name('books.index');
+});
+```
+
+これで「`/books` を開いたら `pages/books/index.tsx` に `books` という props を渡して表示する」という意味になります。
+仮ルートを書くときの注意点は[仮ルートで画面を先に作る](#仮ルートで画面を先に作る)にまとめています。
+
+### ステップ 2 ページファイルを作る
+
+**作るファイル：** `resources/js/pages/books/index.tsx`
+
+```tsx
+import { Head } from '@inertiajs/react';
+
+type Book = {
+    id: number;
+    title: string;
+    author: string;
+    category: {
+        id: number;
+        category_name: string;
+    };
+};
+
+type Props = {
+    books: Book[];
+};
+
+export default function BooksIndex({ books }: Props) {
+    return (
+        <>
+            <Head title="本の一覧" />
+
+            <ul className="p-4">
+                {books.map((book) => (
+                    <li key={book.id}>
+                        {book.title}（{book.author}）
+                    </li>
+                ))}
+            </ul>
+        </>
+    );
+}
+```
+
+ポイント：
+
+- **ファイルの場所が大事です**。ステップ 1 で書いた `'books/index'` と、`pages/` 以下のパス `books/index.tsx` が一致している必要があります（大文字・小文字も区別されます）
+- ページは必ず `export default` します
+- `<Head title="...">` はブラウザのタブに表示されるタイトルです
+- 型の書き方は [TypeScript 最小入門](#typescript-最小入門)を見てください。キーは snake_case（`category_name`）です
+
+**確認：** <http://localhost:8000/books> を開いて、本のタイトルが 3 行表示されれば成功です。
+
+### ステップ 3 見た目を整える
+
+最後に、既存の UI 部品 `Card` と `Badge` を使って、本をカードで並べます。完成形は次のとおりです。
+
+```tsx
+import { Head } from '@inertiajs/react';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+type Book = {
+    id: number;
+    title: string;
+    author: string;
+    category: {
+        id: number;
+        category_name: string;
+    };
+};
+
+type Props = {
+    books: Book[];
+};
+
+export default function BooksIndex({ books }: Props) {
+    return (
+        <>
+            <Head title="本の一覧" />
+
+            <div className="grid gap-4 p-4 md:grid-cols-3">
+                {books.map((book) => (
+                    <Card key={book.id}>
+                        <CardHeader>
+                            <CardTitle>{book.title}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex items-center justify-between">
+                            <span className="text-muted-foreground text-sm">
+                                {book.author}
+                            </span>
+                            <Badge variant="secondary">
+                                {book.category.category_name}
+                            </Badge>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+        </>
+    );
+}
+```
+
+`md:grid-cols-3` は「画面幅が md（768px）以上なら 3 列」という意味の Tailwind のクラスです（→ [UI 部品とスタイリング](#ui-部品とスタイリング)）。
+
+**確認：** 本がカードで並び、ブラウザの幅を狭めると 1 列になれば完成です。
+
+最後に `npm run check:fix` と `npm run types:check` を実行してエラーが無いことを確認します（→ [コーディングルールとチェック](#コーディングルールとチェック)）。
+
+## Laravel 側のコードの読み方
 
 PHP を書けるようになる必要はありません。**「このページにはどんな props が届くのか」を読み取れれば十分**です。
 
@@ -105,7 +233,6 @@ PHP を書けるようになる必要はありません。**「このページ�
 | `[1, 2, 3]`           | 配列 `[1, 2, 3]`                         |
 | `$user->name`         | `user.name`                              |
 | `Route::get(...)`     | `Route.get(...)`（クラスの関数を呼ぶ）   |
-| `// コメント`         | `// コメント`                            |
 
 ### ルートを読む
 
@@ -127,10 +254,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 ```php
 // routes/settings.php（抜粋）
 
-// GET /settings/profile は ProfileController の edit という関数が担当する
+// GET /settings/profile は ProfileController の edit という関数が処理する
 Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
 
-// PATCH /settings/profile（フォームの送信先）は ProfileController の update が担当する
+// PATCH /settings/profile（フォームの送信先）は ProfileController の update が処理する
 Route::patch('settings/profile', [ProfileController::class, 'update'])->name('profile.update');
 ```
 
@@ -154,11 +281,6 @@ PATCH     settings/profile ....... profile.update › Settings\ProfileController
 ...
 ```
 
-> [!TIP]
->
-> `--except-vendor` を付けると、`Route::inertia` で作ったルートは一覧から消えます（Inertia パッケージ側の処理として扱われるため）。
-> 仮ルートを探すときは付けないでください。
-
 ### コントローラを読む
 
 コントローラは `app/Http/Controllers/` にあります。プロフィール設定画面を表示する部分を見てみます。
@@ -175,7 +297,7 @@ public function edit(Request $request): Response
 }
 ```
 
-覚えることは 1 つだけです。
+対応は次のとおりです。
 
 - **`Inertia::render` の第 1 引数** = `resources/js/pages/` 以下のファイルパス（拡張子なし）
 - **第 2 引数の配列** = ページに届く props
@@ -215,8 +337,8 @@ public function update(ProfileUpdateRequest $request): RedirectResponse
 
 フロント側で覚えておくことは次の 2 つです。
 
-- **バリデーションに失敗すると、エラーメッセージが自動で `errors` に入って返ってくる**（→ [フォーム](#フォーム)）
-- **`Inertia::flash('toast', ...)` のトーストは自動で表示される**。フロント側でコードを書く必要はありません（`resources/js/hooks/use-flash-toast.ts` が処理しています）
+- バリデーションに失敗すると、エラーメッセージが自動で `errors` に入って返ってくる（→ [フォーム](#フォーム)）
+- `Inertia::flash('toast', ...)` のトーストは自動で表示される。フロント側でコードを書く必要はありません（`resources/js/hooks/use-flash-toast.ts` が処理しています）
 
 バリデーションのルールは `app/Http/Requests/` のファイルに書かれています。
 
@@ -243,47 +365,30 @@ public function share(Request $request): array
 ### 仮ルートで画面を先に作る
 
 バックエンドができあがるのを待たずに画面を作りたいときは、`Route::inertia` の**第 3 引数にダミーデータ**を書いて仮ルートを作ります。
-
-```php
-// routes/web.php
-
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
-
-    // 仮ルート：バックエンドができるまでダミーデータで表示する
-    Route::inertia('books', 'books/index', [
-        'books' => [
-            ['id' => 1, 'title' => '吾輩は猫である', 'author' => '夏目漱石', 'is_available' => true],
-            ['id' => 2, 'title' => '羅生門', 'author' => '芥川龍之介', 'is_available' => false],
-        ],
-    ])->name('books.index');
-});
-```
+書き方はチュートリアルの[ステップ 1](#ステップ-1-仮ルートを足す)を見てください。
 
 > [!WARNING]
 >
-> ログインが必要な画面の仮ルートは、**必ず `Route::middleware(['auth', 'verified'])->group(...)` の中に書いてください**。
+> ログインが必要な画面の仮ルートは、必ず `Route::middleware(['auth', 'verified'])->group(...)` の中に書いてください。
 > 外に書くと、ログインしていない人にも見えてしまいます。そのうえ `auth.user` が `null` になるので、
 > ページの中で `auth.user.name` などを使っていると画面が真っ白になります。
 
 > [!IMPORTANT]
 >
-> あとでバックエンド担当が仮ルートを本物のコントローラに置き換えても、**props の名前と形が同じなら、ページ側のコードは 1 行も変えずに済みます**。
-> 逆に言えば、props の形（どんな名前で、どんな型のデータが来るか）は**フロントとバックエンドの約束**です。
+> あとでバックエンド担当が仮ルートを本物のコントローラに置き換えても、props の名前と形が同じなら、ページ側のコードは 1 行も変えずに済みます。
+> そのため、props の形（どんな名前で、どんな型のデータが来るか）はフロントとバックエンドの取り決めになります。
 > 画面を作り始める前にバックエンド担当と決めておき、PR の説明にも「仮ルートあり」と書いておきましょう。
 
 ### キーの名前は snake_case
 
 Laravel からデータベースのデータを送ると、キーの名前は `email_verified_at` のような **snake_case**（単語を `_` でつなぐ書き方）になります。
 JavaScript でよく見る `emailVerifiedAt`（camelCase）には自動で変換されません。
-TypeScript の型もそのまま snake_case で書いてください（`resources/js/types/auth.ts` の `User` 型が例です）。
+TypeScript の型もそのまま snake_case で書いてください（例：`resources/js/types/auth.ts` の `User` 型）。
 
 ## TypeScript 最小入門
 
-**この章でわかること** — このプロジェクトで必要な TypeScript の書き方だけ。型エラーの読み方。
-
 このプロジェクトは JavaScript ではなく **TypeScript**（JavaScript に「型」を付けたもの）で書きます。
-型を書いておくと、props の名前を打ち間違えたり、`null` かもしれない値をそのまま使ったりしたときに、**実行する前にエディタが赤い波線で教えてくれます**。
+型を書いておくと、props の名前を打ち間違えたり、`null` かもしれない値をそのまま使ったりしたときに、実行する前にエディタが赤い波線で教えてくれます。
 
 ### 型の書き方
 
@@ -322,10 +427,10 @@ export default function BooksIndex({ books }: Props) {
 
 ### このプロジェクトでの決まり
 
-- **`interface` ではなく `type` を使います**（既存コードに合わせるため）
-- 1 つのページでしか使わない型は、**そのページのファイルの中**に書きます
-- 複数のファイルで使う型は **`resources/js/types/`** に置き、`types/index.ts` から export します。
-  使う側は `import type { User } from '@/types';` のように **`import type`** で読み込みます
+- `interface` ではなく `type` を使います（既存コードに合わせるため）
+- 1 つのページでしか使わない型は、そのページのファイルの中に書きます
+- 複数のファイルで使う型は `resources/js/types/` に置き、`types/index.ts` から export します。
+  使う側は `import type { User } from '@/types';` のように `import type` で読み込みます
 
 ```ts
 // resources/js/types/auth.ts（既存）
@@ -343,9 +448,8 @@ export type User = {
 
 > [!NOTE]
 >
-> サーバーから届く props の型は、**あくまで「こういうデータが来るはず」という自己申告**です。
+> サーバーから届く props の型は、あくまで「こういうデータが来るはず」という自己申告です。
 > サーバーが実際に違う形のデータを送ってきても、TypeScript はそれを検出できません。
-> だからこそ、props の形をバックエンド担当と約束しておくことが大切です。
 
 ### 型エラーの読み方
 
@@ -366,211 +470,7 @@ npm run types:check
 >
 > エディタで型エラーを表示するには、[DevContainer](dev-setup.md#devcontainer-を使う場合)でプロジェクトを開くのが一番簡単です。
 
-## チュートリアル
-
-**この章でわかること** — 仮ルートを作ってから、サイドバーに表示されるまでのページ作成の一連の流れ。
-
-図書館の「本の一覧」ページを作ります。完成すると、サイドバーの「本の一覧」から開けて、本がカードで並ぶページになります。
-
-始める前に `npm run dev` を起動しておいてください。
-また、ページを見るにはログインが必要です。まだアカウントが無ければ <http://localhost:8000/register> から作ってください。
-
-### ステップ 1 仮ルートを足す
-
-**編集するファイル：** `routes/web.php`
-
-`auth` グループの中に、ダミーデータ付きの仮ルートを 1 つ足します。
-
-```php
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
-
-    Route::inertia('books', 'books/index', [
-        'books' => [
-            ['id' => 1, 'title' => '吾輩は猫である', 'author' => '夏目漱石', 'is_available' => true],
-            ['id' => 2, 'title' => '羅生門', 'author' => '芥川龍之介', 'is_available' => false],
-            ['id' => 3, 'title' => '銀河鉄道の夜', 'author' => '宮沢賢治', 'is_available' => true],
-        ],
-    ])->name('books.index');
-});
-```
-
-これで「`/books` を開いたら `pages/books/index.tsx` に `books` という props を渡して表示する」という意味になります。
-
-### ステップ 2 ページファイルを作る
-
-**作るファイル：** `resources/js/pages/books/index.tsx`
-
-```tsx
-import { Head } from '@inertiajs/react';
-
-type Book = {
-    id: number;
-    title: string;
-    author: string;
-    is_available: boolean;
-};
-
-type Props = {
-    books: Book[];
-};
-
-export default function BooksIndex({ books }: Props) {
-    return (
-        <>
-            <Head title="本の一覧" />
-
-            <ul className="p-4">
-                {books.map((book) => (
-                    <li key={book.id}>
-                        {book.title}（{book.author}）
-                    </li>
-                ))}
-            </ul>
-        </>
-    );
-}
-```
-
-ポイント：
-
-- **ファイルの場所が大事です**。ステップ 1 で書いた `'books/index'` と、`pages/` 以下のパス `books/index.tsx` が一致している必要があります（大文字・小文字も区別されます）
-- ページは必ず **`export default`** します
-- `<Head title="...">` はブラウザのタブに表示されるタイトルです
-- 型の書き方は [TypeScript 最小入門](#typescript-最小入門)を見てください。キーは snake_case（`is_available`）です
-
-**確認：** <http://localhost:8000/books> を開いて、本のタイトルが 3 行表示されれば成功です。
-
-### ステップ 3 パンくずを付ける
-
-画面上部の「パンくず」（今いる場所を示すリンク）に「本の一覧」と表示させます。
-`index.tsx` の一番下に、次のコードを足します。
-
-```tsx
-import { index } from '@/routes/books';
-
-// ...（コンポーネントはそのまま）
-
-BooksIndex.layout = {
-    breadcrumbs: [
-        {
-            title: '本の一覧',
-            href: index(),
-        },
-    ],
-};
-```
-
-`import` 文はファイルの先頭に、他の `import` と並べて書いてください。
-
-`@/routes/books` の `index` は、ステップ 1 で付けたルート名 `books.index` から**自動生成された関数**で、`index()` は `/books` を表します（→ [ページ間の移動](#ページ間の移動)）。
-`BooksIndex.layout = { ... }` の書き方は `resources/js/pages/dashboard.tsx` と同じです（→ [共有データとレイアウト](#共有データとレイアウト)）。
-
-**確認：** 画面上部に「本の一覧」と表示されれば成功です。
-
-### ステップ 4 サイドバーにリンクを足す
-
-**編集するファイル：** `resources/js/components/app-sidebar.tsx`
-
-`mainNavItems` の配列に 1 項目足します。アイコンは [lucide](https://lucide.dev/icons/) から選びます。
-
-```tsx
-import { BookOpen, FolderGit2, LayoutGrid, Library } from 'lucide-react'; // Library を追加
-// ...
-import { dashboard } from '@/routes';
-import { index as booksIndex } from '@/routes/books'; // 追加
-
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
-        title: '本の一覧',
-        href: booksIndex(),
-        icon: Library,
-    },
-];
-```
-
-`index` という名前はありふれていて他とぶつかりやすいので、`as booksIndex` で別名を付けています。
-
-**確認：** サイドバーに「本の一覧」が表示され、クリックするとページが開けば成功です。開いているページの項目はハイライトされます。
-
-### ステップ 5 見た目を整える
-
-最後に、既存の UI 部品 `Card` と `Badge` を使って、本をカードで並べます。完成形は次のとおりです。
-
-```tsx
-import { Head } from '@inertiajs/react';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { index } from '@/routes/books';
-
-type Book = {
-    id: number;
-    title: string;
-    author: string;
-    is_available: boolean;
-};
-
-type Props = {
-    books: Book[];
-};
-
-export default function BooksIndex({ books }: Props) {
-    return (
-        <>
-            <Head title="本の一覧" />
-
-            <div className="grid gap-4 p-4 md:grid-cols-3">
-                {books.map((book) => (
-                    <Card key={book.id}>
-                        <CardHeader>
-                            <CardTitle>{book.title}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex items-center justify-between">
-                            <span className="text-muted-foreground text-sm">
-                                {book.author}
-                            </span>
-                            {book.is_available ? (
-                                <Badge>貸出可</Badge>
-                            ) : (
-                                <Badge variant="secondary">貸出中</Badge>
-                            )}
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
-        </>
-    );
-}
-
-BooksIndex.layout = {
-    breadcrumbs: [
-        {
-            title: '本の一覧',
-            href: index(),
-        },
-    ],
-};
-```
-
-`md:grid-cols-3` は「画面幅が md（768px）以上なら 3 列」という意味の Tailwind のクラスです（→ [UI 部品とスタイリング](#ui-部品とスタイリング)）。
-
-**確認：** 本がカードで並び、ブラウザの幅を狭めると 1 列になれば完成です。
-
-最後に `npm run check:fix` と `npm run types:check` を実行してエラーが無いことを確認します（→ [コーディングルールとチェック](#コーディングルールとチェック)）。
-
-### この後の流れ
-
-バックエンド担当が `BookController` を作ったら、`routes/web.php` の仮ルートが本物のルートに置き換わります。
-props の形（`books` という名前で、`id` `title` `author` `is_available` を持つ配列）が同じなら、`index.tsx` はそのまま動きます。
-
 ## ページ間の移動
-
-**この章でわかること** — `<Link>` の使い方と、URL を直接書かずにリンクする方法（Wayfinder）。
 
 ### `<a>` ではなく `<Link>` を使う
 
@@ -591,7 +491,7 @@ import { index } from '@/routes/books';
 ### URL を直接書かない（Wayfinder）
 
 URL を文字列で直接書くと、あとで URL が変わったときにリンク切れに気づけません。
-このプロジェクトでは [Wayfinder](https://github.com/laravel/wayfinder) が、**PHP のルート定義から TypeScript の関数を自動生成**してくれます。
+このプロジェクトでは [Wayfinder](https://github.com/laravel/wayfinder) が、**PHP のルート定義から TypeScript の関数を自動生成**します。
 ルートが変わったり消えたりすると、TypeScript がエラーで教えてくれます。
 
 **ルート名と import の対応**
@@ -614,7 +514,7 @@ index({ query: { page: 2 } }); // /books?page=2
 index.url(); // '/books'（文字列が欲しいとき）
 ```
 
-関数名がぶつかるときは、`import { edit as editAppearance } from '@/routes/appearance';` のように別名を付けます（`resources/js/layouts/settings/layout.tsx` が例です）。
+関数名がぶつかるときは、`import { edit as editAppearance } from '@/routes/appearance';` のように別名を付けます（例：`resources/js/layouts/settings/layout.tsx`）。
 
 コントローラの関数を直接指定することもできます。フォームの送信先を指定するときによく使います（→ [フォーム](#フォーム)）。
 
@@ -627,7 +527,7 @@ ProfileController.update(); // { url: '/settings/profile', method: 'patch' }
 
 > [!NOTE]
 >
-> Wayfinder が生成するファイル（`resources/js/routes/` `resources/js/actions/` `resources/js/wayfinder/`）は**編集しないでください**。Git の管理対象外です。
+> Wayfinder が生成するファイル（`resources/js/routes/` `resources/js/actions/` `resources/js/wayfinder/`）は編集しないでください。Git の管理対象外です。
 > `npm run dev` の実行中は、`routes/*.php` を保存するたびに自動で作り直されます。
 
 ### `<Link>` の便利な使い方
@@ -641,7 +541,7 @@ ProfileController.update(); // { url: '/settings/profile', method: 'patch' }
 <Link href={logout()} as="button">ログアウト</Link>
 ```
 
-Wayfinder の関数は URL と HTTP メソッド（`post` など）の両方を持っているので、`method` を別に書く必要はありません（`resources/js/components/user-menu-content.tsx` のログアウトが例です）。
+Wayfinder の関数は URL と HTTP メソッド（`post` など）の両方を持っているので、`method` を別に書く必要はありません（例：`resources/js/components/user-menu-content.tsx` のログアウト）。
 
 ### JavaScript から移動する
 
@@ -667,128 +567,89 @@ isCurrentUrl(index()); // 今 /books を開いていれば true
 
 ## フォーム
 
-**この章でわかること** — Inertia の `<Form>` を使ったフォームの作り方と、エラーの表示方法。
-
 ### よくある書き方との違い
 
 React のフォームは、次のように `useState` で入力値を持ち、`fetch` で送信する書き方がよく紹介されています。
 
 ```tsx
 // ❌ このプロジェクトでは使わない書き方
-const [pickupDate, setPickupDate] = useState('');
+const [facilityId, setFacilityId] = useState('');
 const [errors, setErrors] = useState({});
 
 async function handleSubmit(e) {
     e.preventDefault();
-    const res = await fetch('/books/1/reservations', {
+    const res = await fetch('/reservations', {
         method: 'POST',
-        body: JSON.stringify({ pickup_date: pickupDate }),
+        body: JSON.stringify({ book_id: bookId, facility_id: facilityId }),
     });
     // エラーの受け取り、画面の更新、送信中の表示…を全部自分で書く
 }
 ```
 
 このプロジェクトでは、Inertia の **`<Form>` コンポーネント**を使います。
-送信、送信中の状態、エラーの受け取り、送信後の画面更新をすべて Inertia がやってくれます。
+送信、送信中の状態、エラーの受け取り、送信後の画面更新をすべて Inertia が行います。
 自分で `fetch` すると、Laravel のセキュリティチェック（CSRF 対策）に引っかかって `419` エラーになるので、使わないでください。
-
-### 既存のフォームを読む
-
-プロフィール設定画面（`resources/js/pages/settings/profile.tsx`）のフォームを見てみます（抜粋）。
-
-```tsx
-<Form
-    {...ProfileController.update.form()}
-    options={{
-        preserveScroll: true,
-    }}
-    className="space-y-6"
->
-    {({ processing, errors }) => (
-        <>
-            <div className="grid gap-2">
-                <Label htmlFor="name">Name</Label>
-
-                <Input
-                    id="name"
-                    className="mt-1 block w-full"
-                    defaultValue={auth.user.name}
-                    name="name"
-                    required
-                    autoComplete="name"
-                    placeholder="Full name"
-                />
-
-                <InputError className="mt-2" message={errors.name} />
-            </div>
-
-            {/* ... */}
-
-            <Button disabled={processing}>Save</Button>
-        </>
-    )}
-</Form>
-```
-
-| 部分                                    | 意味                                                                                   |
-| --------------------------------------- | -------------------------------------------------------------------------------------- |
-| `{...ProfileController.update.form()}`  | 送信先の URL と HTTP メソッドを Wayfinder から設定する                                 |
-| `options={{ preserveScroll: true }}`    | 送信後にページの一番上までスクロールが戻らないようにする                               |
-| `{({ processing, errors }) => ( ... )}` | フォームの中身を関数で書く。`processing` と `errors` を受け取れる                      |
-| `name="name"`                           | **送信されるデータのキー**。サーバー側のバリデーションのキーと一致させる               |
-| `defaultValue={...}`                    | 最初に入っている値。`value` + `onChange` + `useState` を書く必要はない                 |
-| `errors.name`                           | サーバーから返ってきた `name` のエラーメッセージ。エラーが無ければ `undefined`         |
-| `<InputError message={errors.name} />`  | エラーメッセージを赤字で表示する既存コンポーネント。`message` が無ければ何も表示しない |
-| `disabled={processing}`                 | 送信中はボタンを押せなくする（二重送信の防止）                                         |
-
-> [!IMPORTANT]
->
-> **`name` 属性がサーバー側のキーと一致していないと、エラーが表示されません。**
-> 例えばサーバーが `pickup_date` のエラーを返しているのに、入力欄が `name="pickupDate"` だと、`errors.pickupDate` は空のままです。
-> キーの名前はバックエンド担当に確認してください。
 
 ### 図書館の例：予約フォーム
 
-バックエンド担当が「本を予約する」処理（`ReservationController` の `store`、URL は `POST /books/{book}/reservations`）を作った後の例です。
-受け取り予定日（`pickup_date`）と備考（`note`）を送るフォームを、コンポーネント `resources/js/components/reservation-form.tsx` として作ります。
+バックエンド担当が「本を予約する」処理（`ReservationController` の `store`、URL は `POST /reservations`）を作った後の例です。
+予約する本（`book_id`）と受け取り館（`facility_id`）を送るフォームを、コンポーネント `resources/js/components/reservation-form.tsx` として作ります。
+受け取り館の一覧（`facilities`）は、このフォームを置くページの props としてサーバーから受け取る想定です。
 
 ```tsx
 import { Form } from '@inertiajs/react';
 import { store } from '@/actions/App/Http/Controllers/ReservationController';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+
+type Facility = {
+    id: number;
+    facility_name: string;
+};
 
 type Props = {
     bookId: number;
+    facilities: Facility[];
 };
 
-export default function ReservationForm({ bookId }: Props) {
+export default function ReservationForm({ bookId, facilities }: Props) {
     return (
         <Form
-            {...store.form(bookId)}
+            {...store.form()}
             options={{ preserveScroll: true }}
-            resetOnSuccess
             className="max-w-md space-y-6"
         >
             {({ processing, errors }) => (
                 <>
-                    <div className="grid gap-2">
-                        <Label htmlFor="pickup_date">受け取り予定日</Label>
-                        <Input
-                            id="pickup_date"
-                            type="date"
-                            name="pickup_date"
-                        />
-                        <InputError message={errors.pickup_date} />
-                    </div>
+                    <input type="hidden" name="book_id" value={bookId} />
 
                     <div className="grid gap-2">
-                        <Label htmlFor="note">備考（任意）</Label>
-                        <Input id="note" name="note" />
-                        <InputError message={errors.note} />
+                        <Label htmlFor="facility_id">受け取り館</Label>
+                        <Select name="facility_id">
+                            <SelectTrigger id="facility_id" className="w-full">
+                                <SelectValue placeholder="選んでください" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {facilities.map((facility) => (
+                                    <SelectItem
+                                        key={facility.id}
+                                        value={String(facility.id)}
+                                    >
+                                        {facility.facility_name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <InputError message={errors.facility_id} />
                     </div>
 
                     <Button type="submit" disabled={processing}>
@@ -802,18 +663,35 @@ export default function ReservationForm({ bookId }: Props) {
 }
 ```
 
-- `store.form(bookId)` — URL の `{book}` 部分に本の ID を入れて、送信先を `/books/1/reservations` のようにします
-- `resetOnSuccess` — 送信に成功したら入力欄を空に戻します
-- `{processing && <Spinner />}` — 送信中だけくるくる回るアイコンを表示します
-- 成功したときの「予約しました」のトーストは、バックエンドが `Inertia::flash('toast', ...)` で出してくれるので、フロントでは何も書きません
+| 部分                                       | 意味                                                                                                            |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| `{...store.form()}`                        | 送信先の URL と HTTP メソッドを Wayfinder から設定する（`POST /reservations`）                                  |
+| `options={{ preserveScroll: true }}`       | 送信後にページの一番上までスクロールが戻らないようにする                                                        |
+| `{({ processing, errors }) => ( ... )}`    | フォームの中身を関数で書く。`processing` と `errors` を受け取れる                                               |
+| `<input type="hidden" name="book_id" ...>` | 画面には表示せずに送る値。どの本の予約かをサーバーに伝える                                                      |
+| `<Select name="facility_id">`              | **`name` が送信されるデータのキー**。サーバー側のバリデーションのキーと一致させる                               |
+| `value={String(facility.id)}`              | `SelectItem` の `value` は文字列で渡す。サーバーには `"1"` のような文字列で届くが、Laravel 側で数値として扱える |
+| `errors.facility_id`                       | サーバーから返ってきた `facility_id` のエラーメッセージ。エラーが無ければ `undefined`                           |
+| `<InputError message={...} />`             | エラーメッセージを赤字で表示する既存コンポーネント。`message` が無ければ何も表示しない                          |
+| `disabled={processing}`                    | 送信中はボタンを押せなくする（二重送信の防止）                                                                  |
+| `{processing && <Spinner />}`              | 送信中だけくるくる回るアイコンを表示する                                                                        |
+
+編集フォームのように最初から値を入れておきたいときは、`defaultValue={...}` を使います。`value` + `onChange` + `useState` を書く必要はありません（例：`resources/js/pages/settings/profile.tsx`）。
+送信に成功した後に同じページに残り、入力欄を空に戻したいときは、`<Form>` に `resetOnSuccess` を付けます。
+
+成功したときの「予約しました」のトーストは、バックエンドが `Inertia::flash('toast', ...)` で出すので、フロントでは何も書きません。
+
+> [!IMPORTANT]
+>
+> `name` 属性がサーバー側のキーと一致していないと、エラーが表示されません。
+> 例えばサーバーが `facility_id` のエラーを返しているのに、入力欄が `name="facilityId"` だと、`errors.facilityId` は空のままです。
+> キーの名前はバックエンド担当に確認してください。
 
 `<Form>` で足りないくらい細かく制御したい場合は `useForm` という書き方もあります。必要になったら[公式ドキュメント](https://inertiajs.com/docs/v3/the-basics/forms)を見てください。
 
 ## 共有データとレイアウト
 
-**この章でわかること** — ログイン中のユーザー情報の取り方。サイドバーなどの「枠」がどう決まるか。
-
-### ログイン中のユーザーを取る
+### ログイン中のユーザーを取得する
 
 [全ページ共通の props](#全ページ共通の-props)は `usePage()` で取り出せます。どのコンポーネントからでも使えます。
 
@@ -856,24 +734,13 @@ layout: (name) => {
 | `pages/settings/*`                   | `AppLayout` の中に `SettingsLayout`    |
 | それ以外（`pages/books/*` など）     | `AppLayout`（サイドバー付きの画面）    |
 
-つまり、**ページファイルをどのフォルダーに置くかで、自動的にレイアウトが決まります**。
-新しい種類のレイアウトが必要になったら、`app.tsx` を変更する必要があるので相談してください。
+新しいレイアウトの作り方は[レイアウトを作る](#レイアウトを作る)を見てください。
 
 ### ページからレイアウトに値を渡す
 
 ページの関数に `.layout = { ... }` を付けると、その値がレイアウトに渡されます。
 
 ```tsx
-// AppLayout にパンくずを渡す（pages/dashboard.tsx）
-Dashboard.layout = {
-    breadcrumbs: [
-        {
-            title: 'Dashboard',
-            href: dashboard(),
-        },
-    ],
-};
-
 // AuthLayout にタイトルと説明文を渡す（pages/auth/login.tsx）
 Login.layout = {
     title: 'Log in to your account',
@@ -883,9 +750,122 @@ Login.layout = {
 
 本のタイトルなど、props の値を使ってレイアウトを変えたいときは `setLayoutProps` という関数を使います。詳しくは[公式ドキュメント](https://inertiajs.com/docs/v3/the-basics/layouts#layout-props)を見てください。
 
-## UI 部品とスタイリング
+### レイアウトを作る
 
-**この章でわかること** — 既存の UI 部品の探し方と、Tailwind CSS でのスタイルの付け方。
+図書館の画面用に、ヘッダーとナビゲーションを持つレイアウト `LibraryLayout` を作り、`pages/books/*` のページに使う例です。
+
+**1. レイアウトのファイルを作る**
+
+**作るファイル：** `resources/js/layouts/library-layout.tsx`
+
+```tsx
+import { Link, usePage } from '@inertiajs/react';
+import type { ReactNode } from 'react';
+import { useCurrentUrl } from '@/hooks/use-current-url';
+import { cn } from '@/lib/utils';
+import { dashboard } from '@/routes';
+import { index as booksIndex } from '@/routes/books';
+
+const navItems = [
+    { title: 'ダッシュボード', href: dashboard() },
+    { title: '本の一覧', href: booksIndex() },
+];
+
+type Props = {
+    title?: string;
+    children: ReactNode;
+};
+
+export default function LibraryLayout({ title = '', children }: Props) {
+    const { auth } = usePage().props;
+    const { isCurrentUrl } = useCurrentUrl();
+
+    return (
+        <div className="min-h-svh">
+            <header className="flex items-center justify-between border-b px-6 py-4">
+                <nav className="flex gap-4">
+                    {navItems.map((item) => (
+                        <Link
+                            key={item.title}
+                            href={item.href}
+                            className={cn(
+                                'text-sm',
+                                isCurrentUrl(item.href) && 'font-bold',
+                            )}
+                        >
+                            {item.title}
+                        </Link>
+                    ))}
+                </nav>
+                <span className="text-muted-foreground text-sm">
+                    {auth.user.name}
+                </span>
+            </header>
+
+            <main className="p-6">
+                {title && <h1 className="mb-4 text-xl font-medium">{title}</h1>}
+                {children}
+            </main>
+        </div>
+    );
+}
+```
+
+ポイント：
+
+- レイアウトもただの React コンポーネントです。`export default` し、**`children` を必ず受け取って表示します**。ここにページの中身が入ります
+- `title` のように、ページから受け取りたい値は props として定義します。ページが渡さなかったときのために、`title = ''` のように初期値を決めておきます
+- ログイン中のユーザーなど全ページ共通のデータは、レイアウトの中でも `usePage()` で取り出せます
+
+**2. `app.tsx` に登録する**
+
+**編集するファイル：** `resources/js/app.tsx`
+
+```tsx
+import LibraryLayout from '@/layouts/library-layout'; // 追加
+
+// ...
+layout: (name) => {
+    switch (true) {
+        case name === 'welcome':
+            return null;
+        case name.startsWith('auth/'):
+            return AuthLayout;
+        case name.startsWith('settings/'):
+            return [AppLayout, SettingsLayout];
+        case name.startsWith('books/'): // 追加
+            return LibraryLayout;
+        default:
+            return AppLayout;
+    }
+},
+```
+
+`switch (true)` は上から順に調べて、最初に当てはまった `case` のレイアウトを使います。
+すべてのページのレイアウトを差し替えたいときは、`default` の `AppLayout` を書き換えます。
+
+**3. ページから値を渡す**
+
+[ページからレイアウトに値を渡す](#ページからレイアウトに値を渡す)と同じ書き方で、レイアウトの props に値を渡せます。
+
+```tsx
+// resources/js/pages/books/index.tsx の一番下
+BooksIndex.layout = {
+    title: '本の一覧',
+};
+```
+
+**確認：** <http://localhost:8000/books> を開いて、上部にナビゲーションと「本の一覧」の見出しが表示されれば成功です。
+
+> [!NOTE]
+>
+> 同じレイアウトを使うページ同士を `<Link>` で移動しても、レイアウトは作り直されず、ページの部分だけが入れ替わります。
+> そのため、レイアウトの中の `useState`（メニューの開閉など）やスクロール位置は、ページを移動しても保たれます。
+> 逆に、ページごとに変わる値をレイアウトの `useState` に入れると、前のページの値が残ってしまうので、props で受け取ってください。
+
+レイアウトの中にレイアウトを入れる（`settings/*` の `[AppLayout, SettingsLayout]` のような）書き方など、詳しくは[公式ドキュメント](https://inertiajs.com/docs/v3/the-basics/layouts)を見てください。
+
+## UI 部品とスタイリング
 
 デザインは [README](../README.md) の Figma を見てください。
 
@@ -926,9 +906,9 @@ import { Button } from '@/components/ui/button';
 
 > [!WARNING]
 >
-> `components/ui/` のファイルは**直接編集しないでください**。見た目を変えたいときは、使う側で `className` を渡します。
+> `components/ui/` のファイルは直接編集しないでください。見た目を変えたいときは、使う側で `className` を渡します。
 > 新しい shadcn/ui の部品が必要なときは `npx shadcn@latest add 部品名` で追加できますが、
-> 依存パッケージが増えることがあるので、**追加する前に相談してください**。
+> 依存パッケージが増えることがあるので、追加する前に相談してください。
 
 このプロジェクト独自の部品は `resources/js/components/` にあります。
 
@@ -967,8 +947,8 @@ import { Button } from '@/components/ui/button';
 | `bg-muted`                          | 薄い背景（選択中など） |
 | `text-destructive`                  | 削除・エラーなどの色   |
 
-テーマの色は、ダークモードに切り替えると自動で色が変わります。
-`text-red-600` のように**色を直接指定したときだけ**、`dark:text-red-400` のようにダークモード用の色も書いてください（`resources/js/components/input-error.tsx` が例です）。
+テーマ色はダークモードで自動的に切り替わります。
+`text-red-600` のように**色を直接指定したときだけ**、`dark:text-red-400` のようにダークモード用の色も書いてください（例：`resources/js/components/input-error.tsx`）。
 
 > [!NOTE]
 >
@@ -1006,8 +986,6 @@ export function BooksLabel() {
 
 ## コーディングルールとチェック
 
-**この章でわかること** — 名前の付け方と、このプロジェクト特有の React の注意点。PR を出す前に実行するコマンド。
-
 ### 名前の付け方
 
 | 対象             | 書き方                                  | 例                                       |
@@ -1022,9 +1000,9 @@ export function BooksLabel() {
 ### このプロジェクトの React の注意点
 
 - **データを取るために `useEffect` + `fetch` を書かない** — データは props で受け取ります。足りないデータがあれば、props に追加してもらうようバックエンド担当に相談してください
-- **`useMemo` / `useCallback` / `memo` は基本的に不要** — [React Compiler](https://ja.react.dev/learn/react-compiler) が有効になっていて、同じ最適化を自動でやってくれます
+- **`useMemo` / `useCallback` / `memo` は基本的に不要** — [React Compiler](https://ja.react.dev/learn/react-compiler) が有効になっていて、同じ最適化を自動で行います
 - **開発中は `useEffect` が 2 回実行される** — StrictMode という、バグを見つけやすくするための設定が有効なためです。バグではありません
-- **コンポーネントの中でいきなり `window` や `localStorage` を使わない** — このプロジェクトでは、最初の表示を速くするために**サーバー上でも React を実行しています**（SSR）。サーバーには `window` が無いのでエラーになります。`onClick` などのイベントの中か、`useEffect` の中で使ってください
+- **コンポーネントの中でいきなり `window` や `localStorage` を使わない** — このプロジェクトでは、最初の表示を速くするためにサーバー上でも React を実行しています（SSR）。サーバーには `window` が無いのでエラーになります。`onClick` などのイベントの中か、`useEffect` の中で使ってください
 
 ```tsx
 // ❌ サーバーで実行されたときにエラーになる
@@ -1048,16 +1026,10 @@ export default function Example() {
 ### PR を出す前に実行するコマンド
 
 ```bash
-npm run check:fix     # 整形と、自動で直せる問題の修正
-npm run check         # lint（問題のある書き方の検出）と整形のチェック
+npm run check:fix     # 整形（Tailwind のクラスの並べ替えを含む）と、自動で直せる問題の修正
+npm run check         # lint（問題のある書き方の検出）と整形のチェック。ファイルは変更しない
 npm run types:check   # 型チェック
 ```
-
-| コマンド              | やること                                                                            |
-| --------------------- | ----------------------------------------------------------------------------------- |
-| `npm run check:fix`   | インデントや改行を揃え、Tailwind のクラスの順番も並べ替える。直せる問題は自動で直す |
-| `npm run check`       | 整形と lint のチェックだけを行う（ファイルは変更しない）                            |
-| `npm run types:check` | TypeScript の型エラーを探す                                                         |
 
 PR を出すと、GitHub 上でも同じチェックが自動で実行されます。このプロジェクトでは**警告（warning）が 1 つでもあると失敗**します。
 `check:fix` で直らなかったものは、メッセージを読んで手で直してください。
@@ -1102,7 +1074,7 @@ Wayfinder の関数がまだ生成されていません。
 ### props が `undefined` になる
 
 - サーバー側（コントローラや仮ルート）で、その props を本当に渡しているか確認する
-- キーの名前が一致しているか確認する（`isAvailable` と `is_available` など。→ [キーの名前は snake_case](#キーの名前は-snake_case)）
+- キーの名前が一致しているか確認する（`categoryName` と `category_name` など。→ [キーの名前は snake_case](#キーの名前は-snake_case)）
 - 実際に届いているデータを見る：ブラウザの開発者ツールに [React Developer Tools](https://ja.react.dev/learn/react-developer-tools) を入れると、Components タブでページのコンポーネントを選んで props を確認できます
 
 ### リンクをクリックすると画面全体が一瞬白くなる
@@ -1118,10 +1090,6 @@ Wayfinder の関数がまだ生成されていません。
 ログインしていない状態で `auth.user.name` を使っています。
 そのページの仮ルートが `auth` グループの外に書かれていないか確認してください。→ [仮ルートで画面を先に作る](#仮ルートで画面を先に作る)
 
-### `npm run check` がエラーで失敗する
-
-まず `npm run check:fix` を実行してください。それでも残るものは、エラーメッセージに書かれたファイルと行番号を開いて手で直します。
-
 ## 用語集
 
 | 用語                   | 意味                                                                                           | 関連する章                                                                    |
@@ -1136,7 +1104,8 @@ Wayfinder の関数がまだ生成されていません。
 | コントローラ           | リクエストを受け取って処理する PHP のクラス                                                    | [コントローラを読む](#コントローラを読む)                                     |
 | ミドルウェア           | ルートの手前で動くチェック（ログインしているか、など）                                         | [ルートを読む](#ルートを読む)                                                 |
 | バリデーション         | 送信された入力値が正しいかのチェック                                                           | [フォーム](#フォーム)                                                         |
-| フラッシュ・トースト   | 次の画面で一度だけ表示するメッセージ。画面の端に出る通知                                       | [フォーム送信後にサーバーで起きること](#フォーム送信後にサーバーで起きること) |
+| フラッシュ             | 次の画面で一度だけ表示するメッセージ                                                           | [フォーム送信後にサーバーで起きること](#フォーム送信後にサーバーで起きること) |
+| トースト               | 画面の端に一時的に出る通知                                                                     | [フォーム送信後にサーバーで起きること](#フォーム送信後にサーバーで起きること) |
 | Inertia                | Laravel と React をつなぐライブラリ                                                            | [このアプリの仕組み](#このアプリの仕組み)                                     |
 | Wayfinder              | PHP のルート定義から、TypeScript の関数を自動生成するツール                                    | [ページ間の移動](#ページ間の移動)                                             |
 | shadcn/ui              | ボタンや入力欄などの UI 部品集。`components/ui/` に取り込まれている                            | [UI 部品とスタイリング](#ui-部品とスタイリング)                               |
@@ -1144,7 +1113,7 @@ Wayfinder の関数がまだ生成されていません。
 | SPA                    | ページ全体を再読み込みせずに画面を切り替えるアプリ                                             | [このアプリの仕組み](#このアプリの仕組み)                                     |
 | SSR                    | 最初の表示を速くするため、サーバー上で React を実行して HTML を作ること                        | [コーディングルールとチェック](#コーディングルールとチェック)                 |
 | CSRF 対策              | 他のサイトから勝手にフォームを送信されるのを防ぐ仕組み。自前の `fetch` だと `419` エラーになる | [フォーム](#フォーム)                                                         |
-| snake_case / camelCase | `is_available` / `isAvailable` のような名前の書き方。Laravel から来るデータは snake_case       | [キーの名前は snake_case](#キーの名前は-snake_case)                           |
+| snake_case / camelCase | `category_name` / `categoryName` のような名前の書き方。Laravel から来るデータは snake_case     | [キーの名前は snake_case](#キーの名前は-snake_case)                           |
 | 型・型エラー           | 値の種類（文字列・数値など）の宣言と、それに合わない使い方をしたときのエラー                   | [TypeScript 最小入門](#typescript-最小入門)                                   |
 | lint                   | 問題のある書き方を自動で見つけるチェック                                                       | [コーディングルールとチェック](#コーディングルールとチェック)                 |
 
