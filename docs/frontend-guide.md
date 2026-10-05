@@ -394,18 +394,32 @@ TypeScript の型もそのまま snake_case で書いてください（例：`re
 
 型は `type 名前 = { ... }` で定義します。
 
+予約一覧ページ（`reservations/index`）の props を例にします。
+
 ```ts
 type Book = {
-    id: number; // 数値
     title: string; // 文字列
-    is_available: boolean; // true か false
-    published_at: string | null; // 文字列か null のどちらか
-    note?: string; // ? を付けると「無くてもよい」
-    status: 'available' | 'reserved'; // この 2 つの文字列のどちらか
+    author: string;
+    image_url: string | null; // 文字列か null のどちらか
+};
+
+type Reservation = {
+    id: number; // 数値
+    book: Book; // 別の型を中に入れられる
+    status: 'waiting' | 'available' | 'received'; // この 3 つの文字列のどれか
 };
 
 type Props = {
-    books: Book[]; // Book の配列
+    reservations: Reservation[]; // Reservation の配列
+};
+```
+
+`true` / `false` は `boolean`、「無くてもよい」値は `?` を付けて書きます（既存の `pages/settings/profile.tsx` より）。
+
+```ts
+type Props = {
+    mustVerifyEmail: boolean; // true か false
+    status?: string; // ? を付けると「無くてもよい」
 };
 ```
 
@@ -424,6 +438,42 @@ export default function BooksIndex({ books }: Props) {
 ```
 
 `{ books }: Props` の `{ books }` は分割代入です。`props.books` と書く代わりに、最初から `books` という変数で受け取っています。
+
+### API 設計から型を書く
+
+props の型は、Notion の「API」ページに書かれたレスポンスをもとに書きます。
+例えば図書詳細ページ（`/books/{id}`）は、本の情報と、館ごとの貸出できる冊数を受け取ります。
+
+```tsx
+// resources/js/pages/books/show.tsx
+type Props = {
+    book: {
+        id: number;
+        title: string;
+        author: string;
+        publisher: string;
+        isbn: string | null;
+        image_url: string | null;
+        material_type: string;
+        category: {
+            id: number;
+            category_name: string;
+        };
+    };
+    availability: {
+        id: number;
+        facility_name: string;
+        available_count: number;
+    }[];
+};
+
+export default function BooksShow({ book, availability }: Props) {
+    // ...
+}
+```
+
+`{ ... }[]` は「この形のオブジェクトの配列」という意味です。
+API 設計に型がはっきり書かれていない項目（`material_type` の値など）は、バックエンド担当に確認してから書いてください。
 
 ### このプロジェクトでの決まり
 
@@ -453,12 +503,12 @@ export type User = {
 
 ### 型エラーの読み方
 
-| エラーメッセージ                                                        | 意味                                      | 直し方                                                           |
-| ----------------------------------------------------------------------- | ----------------------------------------- | ---------------------------------------------------------------- |
-| `Property 'titel' does not exist on type 'Book'. Did you mean 'title'?` | `Book` 型に `titel` はない（打ち間違い）  | 綴りを直す                                                       |
-| `'book.published_at' is possibly 'null'.`                               | `null` かもしれない値をそのまま使っている | `book.published_at ?? '未定'` のように `null` のときの値を決める |
-| `Type 'string' is not assignable to type 'number'.`                     | 数値が入るべき所に文字列を渡している      | 渡す値か型定義のどちらが正しいか確認する                         |
-| `Binding element 'books' implicitly has an 'any' type.`                 | 引数に型が付いていない                    | `({ books }: Props)` のように型を付ける                          |
+| エラーメッセージ                                                        | 意味                                      | 直し方                                                   |
+| ----------------------------------------------------------------------- | ----------------------------------------- | -------------------------------------------------------- |
+| `Property 'titel' does not exist on type 'Book'. Did you mean 'title'?` | `Book` 型に `titel` はない（打ち間違い）  | 綴りを直す                                               |
+| `'book.isbn' is possibly 'null'.`                                       | `null` かもしれない値をそのまま使っている | `book.isbn ?? 'なし'` のように `null` のときの値を決める |
+| `Type 'string' is not assignable to type 'number'.`                     | 数値が入るべき所に文字列を渡している      | 渡す値か型定義のどちらが正しいか確認する                 |
+| `Binding element 'books' implicitly has an 'any' type.`                 | 引数に型が付いていない                    | `({ books }: Props)` のように型を付ける                  |
 
 プロジェクト全体の型チェックは次のコマンドで実行できます。
 
@@ -496,12 +546,13 @@ URL を文字列で直接書くと、あとで URL が変わったときにリ�
 
 **ルート名と import の対応**
 
-| ルート定義（PHP）                               | import                                     | 使い方        | URL                 |
-| ----------------------------------------------- | ------------------------------------------ | ------------- | ------------------- |
-| `->name('dashboard')`                           | `import { dashboard } from '@/routes';`    | `dashboard()` | `/dashboard`        |
-| `->name('books.index')`                         | `import { index } from '@/routes/books';`  | `index()`     | `/books`            |
-| `->name('books.show')`（URL は `books/{book}`） | `import { show } from '@/routes/books';`   | `show(1)`     | `/books/1`          |
-| `->name('profile.edit')`                        | `import { edit } from '@/routes/profile';` | `edit()`      | `/settings/profile` |
+| ルート定義（PHP）                               | import                                                 | 使い方        | URL                   |
+| ----------------------------------------------- | ------------------------------------------------------ | ------------- | --------------------- |
+| `->name('dashboard')`                           | `import { dashboard } from '@/routes';`                | `dashboard()` | `/dashboard`          |
+| `->name('books.index')`                         | `import { index } from '@/routes/books';`              | `index()`     | `/books`              |
+| `->name('books.show')`（URL は `books/{book}`） | `import { show } from '@/routes/books';`               | `show(1)`     | `/books/1`            |
+| `->name('staff.reservations.index')`            | `import { index } from '@/routes/staff/reservations';` | `index()`     | `/staff/reservations` |
+| `->name('profile.edit')`                        | `import { edit } from '@/routes/profile';`             | `edit()`      | `/settings/profile`   |
 
 ルート名の最後の部分が関数名、それより前が import 元のパスになります。
 
@@ -510,8 +561,19 @@ URL を文字列で直接書くと、あとで URL が変わったときにリ�
 ```tsx
 show(1); // /books/1  （URL の {book} 部分に 1 が入る）
 show({ book: 1 }); // 同じ意味
-index({ query: { page: 2 } }); // /books?page=2
 index.url(); // '/books'（文字列が欲しいとき）
+
+// import { create } from '@/routes/reservations';
+create({ query: { book_id: 1 } }); // /reservations/create?book_id=1（? 以降のクエリパラメータ）
+```
+
+図書詳細ページから予約作成ページへのリンクは、次のように書けます。
+
+```tsx
+import { Link } from '@inertiajs/react';
+import { create } from '@/routes/reservations';
+
+<Link href={create({ query: { book_id: book.id } })}>予約する</Link>;
 ```
 
 関数名がぶつかるときは、`import { edit as editAppearance } from '@/routes/appearance';` のように別名を付けます（例：`resources/js/layouts/settings/layout.tsx`）。
@@ -536,12 +598,13 @@ ProfileController.update(); // { url: '/settings/profile', method: 'patch' }
 // マウスを乗せた時点で次のページを先読みする（クリック後の表示が速くなる）
 <Link href={index()} prefetch>本の一覧</Link>
 
-// ボタンとして表示する（ログアウトなど、GET 以外のリクエストを送るとき）
-// import { logout } from '@/routes';
-<Link href={logout()} as="button">ログアウト</Link>
+// ボタンとして表示する（予約の取り消しなど、GET 以外のリクエストを送るとき）
+// import { destroy } from '@/routes/reservations';
+<Link href={destroy(reservation.id)} as="button">取り消す</Link>
 ```
 
-Wayfinder の関数は URL と HTTP メソッド（`post` など）の両方を持っているので、`method` を別に書く必要はありません（例：`resources/js/components/user-menu-content.tsx` のログアウト）。
+Wayfinder の関数は URL と HTTP メソッド（`destroy` なら `delete`）の両方を持っているので、`method` を別に書く必要はありません。
+既存のコードでは `resources/js/components/user-menu-content.tsx` のログアウトが同じ書き方です。
 
 ### JavaScript から移動する
 
@@ -707,6 +770,42 @@ export function Greeting() {
 
 共通の props の型は `resources/js/types/global.d.ts` で定義済みなので、自分で型を書く必要はありません。
 
+### 職員だけにメニューを表示する
+
+利用者か職員かは、`auth.user.role`（`'member'` か `'staff'`）で判定します。
+バックエンドで `users` に `role` が追加されたら、`resources/js/types/auth.ts` の `User` 型にも 1 行足してください。
+
+```ts
+// resources/js/types/auth.ts
+export type User = {
+    id: number;
+    name: string;
+    email: string;
+    role: 'member' | 'staff'; // 追加
+    // ...
+};
+```
+
+```tsx
+import { Link, usePage } from '@inertiajs/react';
+import { dashboard } from '@/routes/staff';
+
+export function StaffMenuLink() {
+    const { auth } = usePage().props;
+
+    if (auth.user.role !== 'staff') {
+        return null;
+    }
+
+    return <Link href={dashboard()}>職員メニュー</Link>;
+}
+```
+
+> [!IMPORTANT]
+>
+> これは**表示を切り替えているだけ**で、職員以外のアクセスを防いではいません。URL を直接開けば誰でも画面を開こうとできます。
+> 職員以外を締め出すのはバックエンドの役割です（`can:staff` ミドルウェア。→ [バックエンド開発ガイド](backend-guide.md#職員だけに見せるgate)）。
+
 ### レイアウトはフォルダーで決まる
 
 **レイアウト**（サイドバーやヘッダーなど、ページの外側の枠）は、各ページで書くのではなく `resources/js/app.tsx` でまとめて決めています。
@@ -752,23 +851,27 @@ Login.layout = {
 
 ### レイアウトを作る
 
-図書館の画面用に、ヘッダーとナビゲーションを持つレイアウト `LibraryLayout` を作り、`pages/books/*` のページに使う例です。
+職員用の画面（`/staff/*`）用に、職員メニューを並べたヘッダーを持つレイアウト `StaffLayout` を作り、`pages/staff/*` のページに使う例です。
 
 **1. レイアウトのファイルを作る**
 
-**作るファイル：** `resources/js/layouts/library-layout.tsx`
+**作るファイル：** `resources/js/layouts/staff-layout.tsx`
 
 ```tsx
 import { Link, usePage } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn } from '@/lib/utils';
-import { dashboard } from '@/routes';
-import { index as booksIndex } from '@/routes/books';
+import { dashboard } from '@/routes/staff';
+import { index as booksIndex } from '@/routes/staff/books';
+import { index as reservationsIndex } from '@/routes/staff/reservations';
+import { index as usersIndex } from '@/routes/staff/users';
 
 const navItems = [
     { title: 'ダッシュボード', href: dashboard() },
-    { title: '本の一覧', href: booksIndex() },
+    { title: '予約一覧', href: reservationsIndex() },
+    { title: '図書', href: booksIndex() },
+    { title: '利用者', href: usersIndex() },
 ];
 
 type Props = {
@@ -776,7 +879,7 @@ type Props = {
     children: ReactNode;
 };
 
-export default function LibraryLayout({ title = '', children }: Props) {
+export default function StaffLayout({ title = '', children }: Props) {
     const { auth } = usePage().props;
     const { isCurrentUrl } = useCurrentUrl();
 
@@ -798,7 +901,7 @@ export default function LibraryLayout({ title = '', children }: Props) {
                     ))}
                 </nav>
                 <span className="text-muted-foreground text-sm">
-                    {auth.user.name}
+                    {auth.user.name}（職員）
                 </span>
             </header>
 
@@ -822,7 +925,7 @@ export default function LibraryLayout({ title = '', children }: Props) {
 **編集するファイル：** `resources/js/app.tsx`
 
 ```tsx
-import LibraryLayout from '@/layouts/library-layout'; // 追加
+import StaffLayout from '@/layouts/staff-layout'; // 追加
 
 // ...
 layout: (name) => {
@@ -833,8 +936,8 @@ layout: (name) => {
             return AuthLayout;
         case name.startsWith('settings/'):
             return [AppLayout, SettingsLayout];
-        case name.startsWith('books/'): // 追加
-            return LibraryLayout;
+        case name.startsWith('staff/'): // 追加
+            return StaffLayout;
         default:
             return AppLayout;
     }
@@ -849,13 +952,14 @@ layout: (name) => {
 [ページからレイアウトに値を渡す](#ページからレイアウトに値を渡す)と同じ書き方で、レイアウトの props に値を渡せます。
 
 ```tsx
-// resources/js/pages/books/index.tsx の一番下
-BooksIndex.layout = {
-    title: '本の一覧',
+// resources/js/pages/staff/reservations/index.tsx の一番下
+StaffReservationsIndex.layout = {
+    title: '予約一覧',
 };
 ```
 
-**確認：** <http://localhost:8000/books> を開いて、上部にナビゲーションと「本の一覧」の見出しが表示されれば成功です。
+**確認：** 職員のアカウントでログインして <http://localhost:8000/staff/reservations> を開き、上部に職員メニューと「予約一覧」の見出しが表示されれば成功です。
+バックエンドで職員の判定（`role` と `can:staff`）ができる前は、仮ルートを `auth` グループの中に書けば、どのアカウントでも確認できます。
 
 > [!NOTE]
 >
